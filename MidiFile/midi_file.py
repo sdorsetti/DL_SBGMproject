@@ -11,7 +11,8 @@ from IPython.display import clear_output
 logging.basicConfig(filename='midi_parser.log', encoding='utf-8', level=logging.DEBUG)
 
 class MidiFileParser():
-    def __init__(self, src, instrument,max_size):
+    def __init__(self, src, max_size,instrument=None,program=None):
+        
         """_summary_
 
         Args:
@@ -20,6 +21,7 @@ class MidiFileParser():
         self.src = src
         self.max_size = max_size
         self.instrument = instrument
+        self.program = program
     @property
     def clean_folder(self):
         return sort_by_size(self.src, self.max_size)
@@ -65,10 +67,10 @@ class MidiFileParser():
         sampling_freq = 1/ (pm.get_beats()[1]/4)
         l = []
         for j, instrument in enumerate(pm.instruments):
-            if instrument.program == 0 and 'piano' in instrument.name.lower():
+            if instrument.program == 0 and self.instrument in instrument.name.lower():
                 for note in instrument.notes:
                     note.pitch += semi_shift
-            
+
                 df = encode_dummies(instrument, sampling_freq).fillna(value=0) 
                 df = chopster(df)                    
                 df = trim_blanks(df)
@@ -86,12 +88,16 @@ class MidiFileParser():
         """
         """
         logging.info("*****parsing all files in {} of size lower than {} and with {} playing***********".format(self.src, self.max_size, self.instrument))
-        instruments = self.get_instrument_df
-        instruments = instruments[(instruments['program'] == 0) & (instruments['name'].str.contains(self.instrument, case=False))]
-        print(instruments)
+        instruments = self.get_instrument_df.iloc[1:,:]
+        if self.program == None: 
+            self.program = list(instruments["program"].unique())
+        instruments = instruments[instruments['program'].isin(self.program)]
+
+        if self.instrument == None: 
+            self.instrument = ""
+        
         logging.info("******ENCODING*********")
         for i, file in enumerate(instruments['filepath']):
-            clear_output(wait=True)
             song_name = os.path.basename(file)  
             try:
                 semi_shift = transposer(file)
@@ -101,33 +107,31 @@ class MidiFileParser():
                 logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {e}".format(i, len(instruments), song_name,str(e)))
                 continue
             for j, instrument in enumerate(pm.instruments):
-                if instrument.program == 0 and 'piano' in instrument.name.lower():
-                    for note in instrument.notes:
-                        note.pitch += semi_shift
-                    try:
-                        df = encode_dummies(instrument, sampling_freq).fillna(value=0) 
-                    except Exception as e:
-                        logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {e}".format(i, len(instruments), song_name,str(e)))
-                        continue
-                    df = chopster(df)                    
-                    df = trim_blanks(df)
-                    if df is None:
-                        logging.warning("{}/{}: {}. IS AN EMPTY TRACK".format(i, len(instruments), song_name))
-                        continue
-                    df = minister(df)            
-                    df = arpster(df)
-                    if np.amax(np.asarray(df.astype(bool).sum(axis=1))) > 1:
-                        continue
-                    df.reset_index(inplace=True, drop=True)
+                for note in instrument.notes:
+                    note.pitch += semi_shift
+                try:
+                    df = encode_dummies(instrument, sampling_freq).fillna(value=0) 
+                except Exception as e:
+                    logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(instruments), song_name,str(e)))
+                    continue
 
-                    top_level_index = "{}_{}:{}".format(song_name, i, j)
-                    df['timestep'] = df.index
-                    df['piano_roll_name'] = top_level_index
-                    df = df.set_index(['piano_roll_name', 'timestep'])
-    
-                    df.to_csv(path_to_csv, sep=';', mode='a', encoding='utf-8', header=False)
-    
-                    logging.info("{}/{}: {}. ENCODED SUCCESSFULLY".format(i, len(instruments), song_name))
+                df = chopster(df)                    
+                df = trim_blanks(df)
+                if df is None:
+                    logging.warning("{}/{}: {}. IS AN EMPTY TRACK".format(i, len(instruments), song_name))
+                    continue
+                df = minister(df)            
+                df = arpster(df)
+                df.reset_index(inplace=True, drop=True)
+
+                top_level_index = "{}_{}:{}".format(song_name, i, j)
+                df['timestep'] = df.index
+                df['piano_roll_name'] = top_level_index
+                df = df.set_index(['piano_roll_name', 'timestep'])
+
+                df.to_csv(path_to_csv, sep=';', mode='a', encoding='utf-8', header=False)
+
+                logging.info("{}/{}: {}. ENCODED SUCCESSFULLY".format(i, len(instruments), song_name))
 
                 
 if __name__ == "__main__":
