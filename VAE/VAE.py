@@ -14,6 +14,8 @@ from IPython.display import Image, display, clear_output
 import time
 import os
 
+from tqdm import tqdm
+
 class VariationalAutoencoder(nn.Module):
     def __init__(self, latent_features,teacher_forcing, eps_i,
                     cuda, device,  
@@ -78,7 +80,6 @@ class VariationalAutoencoder(nn.Module):
     
     def set_scheduled_sampling(self, eps_i):
         self.eps_i = eps_i
-
 
     def forward(self, x, NUM_PITCHES = 61, 
                 decoders_initial_size = 32, totalbars = 16,
@@ -263,7 +264,7 @@ class VariationalAutoencoder(nn.Module):
         start = time.time()
         print("Training epoch {}".format(0))
         #epochs loop
-        for epoch in range(num_epochs):
+        for epoch in tqdm(range(num_epochs)):
             
             batch_loss, batch_kl,batch_klw = [], [],[]
             self.train()
