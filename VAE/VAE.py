@@ -3,23 +3,15 @@ import numpy as np
 import torch.nn as nn
 from torch.nn.functional import softplus
 
-import sys
-sys.path.insert(0, 'MusicVAE/src/')
-
-from data.dataloader import MidiDataset
-from data.bar_transform import BarTransform
+from VAE.torch_data import *
 from torch.utils.data import Dataset, DataLoader
-
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader, random_split
 
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
-from IPython.display import Image, Audio, display, clear_output
+from IPython.display import Image, display, clear_output
 import numpy as np
-from sklearn.decomposition import PCA
-%matplotlib nbagg
-%matplotlib inline
 import seaborn as sns
 sns.set_style("whitegrid")
 sns.set_palette(sns.dark_palette("purple"))
@@ -30,7 +22,7 @@ from torch.distributions.kl import kl_divergence
 from torch.autograd import Variable
 import time
 import os
-import math
+
 from midi_builder import MidiBuilder
 
 class VariationalAutoencoder(nn.Module):
@@ -243,7 +235,6 @@ def ELBO_loss(y, t, mu, log_var, weight):
     
     # notice minus sign as we want to maximise ELBO
     return -ELBO, kl_div.mean(),weight*kl_div.mean() # mean instead of sum
-
 
 def lin_decay(train_loader, i, mineps=0):
     return np.max([mineps, 1 - (1/len(train_loader))*i])
