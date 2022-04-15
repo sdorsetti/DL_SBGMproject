@@ -73,9 +73,9 @@ class MidiFileParser():
 
                 df = encode_dummies(instrument, sampling_freq).fillna(value=0) 
                 df = chopster(df)                    
-                df = trim_blanks(df)
-                df = minister(df)            
-                df = arpster(df)
+                # df = trim_blanks(df)
+                # df = minister(df)            
+                # df = arpster(df)
                 df.reset_index(inplace=True, drop=True)
                 top_level_index = "{}_{}:{}".format(filename.split("/")[-1], 0, j)
                 df['timestep'] = df.index

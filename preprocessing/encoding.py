@@ -122,8 +122,6 @@ def padster(dframe):
     return dframe.fillna(0)
 
 def transposer(midi_file):
-    midi_array = midi_file.split('/')
-
     # converting everything into the key of C major or A minor
     # Major conversion
     majors = dict([("A-", 4),("G#", 4),("A", 3),("A#", 2),("B-", 2),("B", 1),("C", 0),("C#", -1),("D-", -1),("D", -2),("D#", -3),("E-", -3),("E", -4),("F", -5),("F#", 6),("G-", 6),("G", 5)])
