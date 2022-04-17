@@ -1,17 +1,16 @@
 import os
+import sys
 import pretty_midi
 import logging
 import pandas as pd
 import argparse
-
-from preprocessing.cleaning import sort_by_size
-from preprocessing.encoding import *
+import sys
+from DL_SBGMproject.preprocessing.cleaning import sort_by_size
+from DL_SBGMproject.preprocessing.encoding import *
 from IPython.display import clear_output
 
-logging.basicConfig(filename='midi_parser.log', encoding='utf-8', level=logging.DEBUG)
-
 class MidiFileParser():
-    def __init__(self, src, max_size,instrument=None,program=None):
+    def __init__(self, src, max_size,instrument=None,program=None, logging=False):
         
         """_summary_
 
@@ -37,7 +36,8 @@ class MidiFileParser():
         midi_files = self.clean_folder
         for index, file in enumerate(midi_files):
             clear_output(wait=True)
-            logging.info("{}/{}: Loading and parsing {}".format(index, len(midi_files), os.path.basename(file)))
+            if self.logging: 
+                logging.info("{}/{}: Loading and parsing {}".format(index, len(midi_files), os.path.basename(file)))
             try:
                 pm = pretty_midi.PrettyMIDI(file)
                 instruments = pm.instruments
@@ -84,10 +84,12 @@ class MidiFileParser():
                 l.append(df)
         return pd.concat(l)
 
-    def get_piano_roll_df(self,path_to_csv):
+    def get_piano_roll_df(self,path_to_csv, transposer_=True, chopster_=False, trim_blanks_ = False, minister_=False,arpster_=False):
         """
         """
-        logging.info("*****parsing all files in {} of size lower than {} and with {} playing***********".format(self.src, self.max_size, self.instrument))
+        if self.logging:
+            logging.basicConfig(filename='midi_parser.log', level=logging.DEBUG)
+            logging.info("*****parsing all files in {} of size lower than {} and with {} playing***********".format(self.src, self.max_size, self.instrument))
         instruments = self.get_instrument_df.iloc[1:,:]
         if self.program == None: 
             self.program = list(instruments["program"].unique())
@@ -95,12 +97,13 @@ class MidiFileParser():
 
         if self.instrument == None: 
             self.instrument = ""
-        
-        logging.info("******ENCODING*********")
+        if self.logging:
+            logging.info("******ENCODING*********")
         for i, file in enumerate(instruments['filepath']):
             song_name = os.path.basename(file)  
             try:
-                semi_shift = transposer(file)
+                if transposer_:
+                    semi_shift = transposer(file)
                 pm = pretty_midi.PrettyMIDI(file)
                 sampling_freq = 1/ (pm.get_beats()[1]/4)
             except Exception as e:
@@ -114,24 +117,25 @@ class MidiFileParser():
                 except Exception as e:
                     logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(instruments), song_name,str(e)))
                     continue
-
-                df = chopster(df)                    
-                df = trim_blanks(df)
+                if chopster_:
+                    df = chopster(df)
+                if trim_blanks_:                 
+                    df = trim_blanks(df)
                 if df is None:
                     logging.warning("{}/{}: {}. IS AN EMPTY TRACK".format(i, len(instruments), song_name))
                     continue
-                df = minister(df)            
-                df = arpster(df)
+                if minister_:
+                    df = minister(df)   
+                if arpster:         
+                    df = arpster(df)
                 df.reset_index(inplace=True, drop=True)
-
                 top_level_index = "{}_{}:{}".format(song_name, i, j)
                 df['timestep'] = df.index
                 df['piano_roll_name'] = top_level_index
                 df = df.set_index(['piano_roll_name', 'timestep'])
-
                 df.to_csv(path_to_csv, sep=';', mode='a', encoding='utf-8', header=False)
-
-                logging.info("{}/{}: {}. ENCODED SUCCESSFULLY".format(i, len(instruments), song_name))
+                if self.logging:
+                    logging.info("{}/{}: {}. ENCODED SUCCESSFULLY".format(i, len(instruments), song_name))
 
                 
 if __name__ == "__main__":
