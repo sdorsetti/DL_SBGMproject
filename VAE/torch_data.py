@@ -6,7 +6,7 @@ import pandas as pd
 
 class BarTransform():
 
-    def __init__(self, bars=1, split=8,note_count=60):
+    def __init__(self, split, bars=1,note_count=60):
         self.split_size = bars*split
         self.note_count = note_count
 
