@@ -118,7 +118,6 @@ def cutster(dframe, frame_size, undesired_silence):
     return dframe
 
 def padster(dframe):
-
     return dframe.fillna(0)
 
 def transposer(midi_file):
