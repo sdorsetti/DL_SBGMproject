@@ -9,6 +9,8 @@ from DL_SBGMproject.preprocessing.cleaning import sort_by_size
 from DL_SBGMproject.preprocessing.encoding import *
 from IPython.display import clear_output
 
+from preprocessing.encoding import cutster
+
 class MidiFileParser():
     def __init__(self, src, max_size,instrument=None,program=None, logging=False):
         
@@ -60,11 +62,12 @@ class MidiFileParser():
         instruments = pm.instruments
         return instruments
                 
-    def encoding(self, filename):
+    def encoding(self, filename, fs):
 
         semi_shift = transposer(filename)
         pm = pretty_midi.PrettyMIDI(filename)
-        sampling_freq = 1/ (pm.get_beats()[1]/4)
+        # sampling_freq = 1/ (pm.get_beats()[1]/4)
+        sampling_freq = 1/ fs
         l = []
         for j, instrument in enumerate(pm.instruments):
             if instrument.program == 0 and self.instrument in instrument.name.lower():
@@ -72,10 +75,6 @@ class MidiFileParser():
                     note.pitch += semi_shift
 
                 df = encode_dummies(instrument, sampling_freq).fillna(value=0) 
-                df = chopster(df)                    
-                # df = trim_blanks(df)
-                # df = minister(df)            
-                # df = arpster(df)
                 df.reset_index(inplace=True, drop=True)
                 top_level_index = "{}_{}:{}".format(filename.split("/")[-1], 0, j)
                 df['timestep'] = df.index
@@ -84,7 +83,7 @@ class MidiFileParser():
                 l.append(df)
         return pd.concat(l)
 
-    def get_piano_roll_df(self,path_to_csv, transposer_=True, chopster_=False, trim_blanks_ = False, minister_=False,arpster_=False):
+    def get_piano_roll_df(self,path_to_csv, fs,transposer_=True, chopster_=False, trim_blanks_ = False, minister_=False,arpster_=False, cutster_=False, padster_=False):
         """
         """
         if self.logging:
@@ -105,7 +104,6 @@ class MidiFileParser():
                 if transposer_:
                     semi_shift = transposer(file)
                 pm = pretty_midi.PrettyMIDI(file)
-                sampling_freq = 1/ (pm.get_beats()[1]/4)
             except Exception as e:
                 logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {e}".format(i, len(instruments), song_name,str(e)))
                 continue
@@ -113,7 +111,7 @@ class MidiFileParser():
                 for note in instrument.notes:
                     note.pitch += semi_shift
                 try:
-                    df = encode_dummies(instrument, sampling_freq).fillna(value=0) 
+                    df = encode_dummies(instrument, fs).fillna(value=0) 
                 except Exception as e:
                     logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(instruments), song_name,str(e)))
                     continue
@@ -126,8 +124,13 @@ class MidiFileParser():
                     continue
                 if minister_:
                     df = minister(df)   
-                if arpster:         
+                if arpster_:         
                     df = arpster(df)
+                if padster_: 
+                    df = padster(df)
+                if cutster_: 
+                    df = cutster(df)
+
                 df.reset_index(inplace=True, drop=True)
                 top_level_index = "{}_{}:{}".format(song_name, i, j)
                 df['timestep'] = df.index
