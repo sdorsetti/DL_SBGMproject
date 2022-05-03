@@ -81,7 +81,7 @@ class MidiFileParser():
                 l.append(df)
         return pd.concat(l)
 
-    def get_piano_roll_df(self,path_to_csv, fs,transposer_=True, chopster_=False, trim_blanks_ = False, minister_=False,arpster_=False, cutster_=False, padster_=False):
+    def get_piano_roll_df(self,path_to_csv, fs,transposer_=False, chopster_=False, trim_blanks_ = False, minister_=False,arpster_=False, cutster_=False, padster_=False):
         """
         """
         if self.logging:
