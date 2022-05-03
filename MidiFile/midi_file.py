@@ -9,8 +9,6 @@ from DL_SBGMproject.preprocessing.cleaning import sort_by_size
 from DL_SBGMproject.preprocessing.encoding import *
 from IPython.display import clear_output
 
-from preprocessing.encoding import cutster
-
 class MidiFileParser():
     def __init__(self, src, max_size,instrument=None,program=None, logging=False):
         

@@ -72,7 +72,7 @@ class MidiBuilder():
         synth = midi_sample.synthesize(fs=fs)
         return [synth], fs
 
-def piano_roll_to_pretty_midi(piano_roll, fs=32, program=0):
+def piano_roll_to_pretty_midi(piano_roll, fs=32, program=0,to_mid=True, filename=None):
     '''Convert a Piano Roll array into a PrettyMidi object
      with a single instrument.
     Parameters
@@ -122,4 +122,6 @@ def piano_roll_to_pretty_midi(piano_roll, fs=32, program=0):
             instrument.notes.append(pm_note)
             prev_velocities[note] = 0
     pm.instruments.append(instrument)
+    if to_mid:
+        pm.write(filename)
     return pm
