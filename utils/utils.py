@@ -2,6 +2,7 @@ import pretty_midi
 import librosa.display as display
 import matplotlib.pyplot as plt
 from IPython.display import Audio
+import numpy as np 
 
 def plot_midi(encoded_midi_file, title = None):
     """_summary_
