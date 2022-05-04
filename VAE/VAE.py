@@ -8,7 +8,7 @@ from torch.distributions.normal import Normal
 from torch.distributions.kl import kl_divergence
 from torch.autograd import Variable
 from torch.nn.functional import binary_cross_entropy
-from DL_SBGM.structure import data_path
+from DL_SBGMproject.structure import data_path
 import matplotlib.pyplot as plt
 from IPython.display import Image, display, clear_output
 import time
