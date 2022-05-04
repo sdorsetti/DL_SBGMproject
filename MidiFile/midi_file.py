@@ -3,16 +3,14 @@ import sys
 import pretty_midi
 import logging
 import pandas as pd
-import argparse
 import sys
 from tqdm import tqdm
-from DL_SBGMproject.preprocessing.cleaning import sort_by_size
 from DL_SBGMproject.preprocessing.encoding import *
-from IPython.display import clear_output
+
 
 
 class MidiFileParser():
-    def __init__(self, src, max_size,instrument=None,program=None, logging=False):
+    def __init__(self, src,instrument=None,program=None, logging_=False):
         
         """_summary_
 
@@ -20,13 +18,10 @@ class MidiFileParser():
             src (_type_): _description_
         """
         self.src = src
-        self.max_size = max_size
         self.instrument = instrument
         self.program = program
-        self.logging = logging
-    @property
-    def clean_folder(self):
-        return sort_by_size(self.src, self.max_size)
+        self.logging = logging_
+
     @property
     def get_instrument_df(self):
         """_summary_
@@ -36,7 +31,7 @@ class MidiFileParser():
         """
         instrument_ary = [[]]
         instrument_ary.append(['program', 'is_drum', 'name','filepath'])
-        midi_files = self.clean_folder
+        midi_files=list(sorted(os.listdir(self.src)))
         for index, file in enumerate(midi_files):
             if self.logging: 
                 logging.info("{}/{}: Loading and parsing {}".format(index, len(midi_files), os.path.basename(file)))
@@ -88,9 +83,9 @@ class MidiFileParser():
         """
         if self.logging:
             logging.basicConfig(filename='/content/midi_parser.log', level=logging.DEBUG)
-            logging.info("*****parsing all files in {} of size lower than {} and with {} playing***********".format(self.src, self.max_size, self.instrument))
+            logging.info("*****parsing all files in {} with {} playing***********".format(self.src, self.instrument))
 
-        midi_files = self.clean_folder
+        midi_files=[self.src + x for x in list(sorted(os.listdir(self.src)))]
         l=[]
         logging.info("******ENCODING*********")
         for i, file in tqdm(enumerate(midi_files)):
