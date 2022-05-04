@@ -49,7 +49,7 @@ class MidiDataset(Dataset):
             dtypes[column] = 'uint8'
         
         piano_rolls = pd.read_csv(csv_file, sep=';')
-        piano_rolls.columns = ["piano_roll_name", "time_step"] + [pretty_midi.note_number_to_name(n) for n in range(48,108)]
+        piano_rolls.columns = ["piano_roll_name", "time_step"] + [pretty_midi.note_number_to_name(n) for n in range(midi_start, midi_end)]
         piano_rolls = piano_rolls.set_index(['piano_roll_name', 'time_step']).dropna().astype(dtypes)
         
         if group_both_hands:
