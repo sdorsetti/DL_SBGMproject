@@ -34,7 +34,7 @@ class BarTransform():
 class MidiDataset(Dataset):
     """Pre-processed MIDI dataset."""
 
-    def __init__(self, csv_file, transform, midi_start=48, midi_end=108):
+    def __init__(self, csv_file, transform, midi_start=0, midi_end=128,group_both_hands=True):
         """
         Args:
             csv_file (string): Path to the csv file with piano rolls per song.
@@ -51,6 +51,14 @@ class MidiDataset(Dataset):
         piano_rolls = pd.read_csv(csv_file, sep=';')
         piano_rolls.columns = ["piano_roll_name", "time_step"] + [pretty_midi.note_number_to_name(n) for n in range(48,108)]
         piano_rolls = piano_rolls.set_index(['piano_roll_name', 'time_step']).dropna().astype(dtypes)
+        
+        if group_both_hands:
+            piano_rolls =  piano_rolls.reset_index()
+            piano_rolls["file"] = piano_rolls["piano_roll_name"].apply(lambda x : x.split(":")[0])
+            piano_rolls = piano_rolls.groupby(["file","time_step"], as_index=False).sum()
+            piano_rolls = piano_rolls.rename(columns = {"file":"piano_roll_name"}).set_index(["time_step","piano_roll_name"])
+
+
         self.piano_rolls = piano_rolls
 
         self.transform = transform

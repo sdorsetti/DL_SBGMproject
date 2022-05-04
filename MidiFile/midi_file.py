@@ -9,6 +9,7 @@ from DL_SBGMproject.preprocessing.cleaning import sort_by_size
 from DL_SBGMproject.preprocessing.encoding import *
 from IPython.display import clear_output
 
+
 class MidiFileParser():
     def __init__(self, src, max_size,instrument=None,program=None, logging=False):
         
@@ -21,6 +22,7 @@ class MidiFileParser():
         self.max_size = max_size
         self.instrument = instrument
         self.program = program
+        self.logging = logging
     @property
     def clean_folder(self):
         return sort_by_size(self.src, self.max_size)
@@ -81,7 +83,7 @@ class MidiFileParser():
                 l.append(df)
         return pd.concat(l)
 
-    def get_piano_roll_df(self,path_to_csv, fs,transposer_=False, chopster_=False, trim_blanks_ = False, minister_=False,arpster_=False, cutster_=False, padster_=False):
+    def get_piano_roll_df(self,path_to_csv, fs,transposer_=True, chopster_=False, trim_blanks_ = False, minister_=False,arpster_=False, cutster_=False, padster_=False):
         """
         """
         if self.logging:
@@ -134,29 +136,8 @@ class MidiFileParser():
                 df['timestep'] = df.index
                 df['piano_roll_name'] = top_level_index
                 df = df.set_index(['piano_roll_name', 'timestep'])
-                df.to_csv(path_to_csv, sep=';', mode='a', encoding='utf-8', header=False)
+                df.to_csv(f"{path_to_csv}encoded.csv", sep=';', mode='a', encoding='utf-8', header=False)
                 if self.logging:
                     logging.info("{}/{}: {}. ENCODED SUCCESSFULLY".format(i, len(instruments), song_name))
-
-                
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--input_path',metavar = "-p",type = str,help='path to directory where midi files are stored')
-    parser.add_argument('--output_path',metavar = "-p",type = str,help='path to directory where to store csv file')
-    parser.add_argument("--max_size", metavar = "-s", type = int, help="max size of file")
-    parser.add_argument("--instruments", metavar = "-i", type = str, help="list of instruments to keep")
-
-    args = parser.parse_args()
-    src = args["input_path"]
-    path = args["output_path"]
-    instrument = args["instruments"]
-    max_size  = int(args["max_size"])
-
-    
-    
-    mdp = MidiFileParser(src =src, instrument = instrument ,max_size=max_size)
-    mdp.get_piano_roll_df(path)
-
-
 
                 
