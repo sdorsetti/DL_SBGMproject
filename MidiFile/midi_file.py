@@ -82,7 +82,7 @@ class MidiFileParser():
         """
         """
         if self.logging:
-            logging.basicConfig(filename='/content/midi_parser.log', level=logging.DEBUG)
+            logging.basicConfig(filename=f'{path_to_csv}midiparser.log', level=logging.DEBUG)
             logging.info("*****parsing all files in {} with {} playing***********".format(self.src, self.instrument))
 
         midi_files=[self.src + x for x in list(sorted(os.listdir(self.src)))]
