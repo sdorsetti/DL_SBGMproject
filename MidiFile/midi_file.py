@@ -10,7 +10,7 @@ from DL_SBGMproject.preprocessing.encoding import *
 
 
 class MidiFileParser():
-    def __init__(self, src,instrument=None,program=None, logging_=False):
+    def __init__(self, src,instrument=None,program=None, logging=False):
         
         """_summary_
 
@@ -20,7 +20,7 @@ class MidiFileParser():
         self.src = src
         self.instrument = instrument
         self.program = program
-        self.logging = logging_
+        self.logging = logging
 
     @property
     def get_instrument_df(self):

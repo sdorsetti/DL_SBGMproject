@@ -34,6 +34,7 @@ class VariationalAutoencoder(nn.Module):
 
         self.totalbars = totalbars
         self.notesperbar = notesperbar
+        self.NUM_PITCHES = NUM_PITCHES
 
         #data goes into bidirectional encoder
         self.encoder = torch.nn.LSTM(
@@ -83,11 +84,11 @@ class VariationalAutoencoder(nn.Module):
     def set_scheduled_sampling(self, eps_i):
         self.eps_i = eps_i
 
-    def forward(self, x,totalbars,NOTESPERBAR, NUM_PITCHES = 61, 
-                decoders_initial_size = 32):
+    def forward(self, x,totalbars,NOTESPERBAR, NUM_PITCHES , 
+                decoders_initial_size):
         batch_size = x.size(0)
 
-        note = torch.zeros(batch_size, 1 , NUM_PITCHES,device=self.device)
+        note = torch.zeros(batch_size, 1 , NUM_PITCHES = self.NUM_PITCHES,device=self.device)
 
         the_input = torch.cat([note,x],dim=1)
         
