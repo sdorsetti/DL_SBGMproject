@@ -8,6 +8,7 @@ import pretty_midi
 import matplotlib.pyplot as plt
 import librosa.display as display
 
+
 class MidiBuilder():
     """Build a MIDI from a piano roll sample"""
 
@@ -125,3 +126,5 @@ def piano_roll_to_pretty_midi(piano_roll, fs=32, program=0,to_mid=True, filename
     if to_mid:
         pm.write(filename)
     return pm
+
+
