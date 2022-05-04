@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+data_for_test/
 develop-eggs/
 dist/
 downloads/
@@ -20,6 +21,7 @@ parts/
 sdist/
 var/
 wheels/
+data_for_test/
 pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
@@ -127,3 +129,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
