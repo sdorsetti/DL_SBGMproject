@@ -18,7 +18,7 @@ Finally, a structure.py file contains the main path to the data, if one wants to
 
 **********************************************
 PLEASE VISIT OUR SHARED GOOGLE COLAB AT: 
-
+https://colab.research.google.com/drive/1UlHGcRHQDY5uSIO50JA-jtRYaueu2KSv?usp=sharing
 **********************************************
 
 
