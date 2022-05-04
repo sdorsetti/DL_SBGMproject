@@ -56,7 +56,7 @@ class MidiDataset(Dataset):
             piano_rolls =  piano_rolls.reset_index()
             piano_rolls["file"] = piano_rolls["piano_roll_name"].apply(lambda x : x.split(":")[0])
             piano_rolls = piano_rolls.groupby(["file","time_step"], as_index=False).sum()
-            piano_rolls = piano_rolls.rename(columns = {"file":"piano_roll_name"}).set_index(["time_step","piano_roll_name"])
+            piano_rolls = piano_rolls.rename(columns = {"file":"piano_roll_name"}).set_index(["piano_roll_name","time_step"])
 
 
         self.piano_rolls = piano_rolls
