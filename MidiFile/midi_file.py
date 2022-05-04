@@ -5,6 +5,7 @@ import logging
 import pandas as pd
 import argparse
 import sys
+from tqdm import tqdm
 from DL_SBGMproject.preprocessing.cleaning import sort_by_size
 from DL_SBGMproject.preprocessing.encoding import *
 from IPython.display import clear_output
