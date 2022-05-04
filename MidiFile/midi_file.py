@@ -37,7 +37,6 @@ class MidiFileParser():
         instrument_ary.append(['program', 'is_drum', 'name','filepath'])
         midi_files = self.clean_folder
         for index, file in enumerate(midi_files):
-            clear_output(wait=True)
             if self.logging: 
                 logging.info("{}/{}: Loading and parsing {}".format(index, len(midi_files), os.path.basename(file)))
             try:
@@ -87,41 +86,44 @@ class MidiFileParser():
         """
         """
         if self.logging:
-            logging.basicConfig(filename='midi_parser.log', level=logging.DEBUG)
+            logging.basicConfig(filename='/content/midi_parser.log', level=logging.DEBUG)
             logging.info("*****parsing all files in {} of size lower than {} and with {} playing***********".format(self.src, self.max_size, self.instrument))
-        instruments = self.get_instrument_df.iloc[1:,:]
-        if self.program == None: 
-            self.program = list(instruments["program"].unique())
-        instruments = instruments[instruments['program'].isin(self.program)]
 
-        if self.instrument == None: 
-            self.instrument = ""
-        if self.logging:
-            logging.info("******ENCODING*********")
-        for i, file in enumerate(instruments['filepath']):
+        midi_files = self.clean_folder
+        l=[]
+        logging.info("******ENCODING*********")
+        for i, file in tqdm(enumerate(midi_files)):
             song_name = os.path.basename(file)  
+            if transposer_:
+                semi_shift = transposer(file)
+            else : 
+                semi_shift = 0
             try:
-                if transposer_:
-                    semi_shift = transposer(file)
                 pm = pretty_midi.PrettyMIDI(file)
             except Exception as e:
-                logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {e}".format(i, len(instruments), song_name,str(e)))
+                logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(midi_files), song_name,str(e)))
+                print("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(midi_files), song_name,str(e)))
                 continue
-            for j, instrument in enumerate(pm.instruments):
+
+            instruments = pm.instruments
+
+            for j,instrument in enumerate(instruments):
                 for note in instrument.notes:
                     note.pitch += semi_shift
                 try:
                     df = encode_dummies(instrument, fs).fillna(value=0) 
                 except Exception as e:
-                    logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(instruments), song_name,str(e)))
+                    logging.warning("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(midi_files), song_name,str(e)))
+                    print("{}/{}: {}. ENCOUNTERED EXCEPTION {}".format(i, len(midi_files), song_name,str(e)))
+                    continue
+                if df is None:
+                    logging.warning("{}/{}: {}. IS AN EMPTY TRACK".format(i, len(midi_files), song_name))
+                    print("{}/{}: {}. IS AN EMPTY TRACK".format(i, len(midi_files), song_name))
                     continue
                 if chopster_:
                     df = chopster(df)
                 if trim_blanks_:                 
                     df = trim_blanks(df)
-                if df is None:
-                    logging.warning("{}/{}: {}. IS AN EMPTY TRACK".format(i, len(instruments), song_name))
-                    continue
                 if minister_:
                     df = minister(df)   
                 if arpster_:         
@@ -136,8 +138,12 @@ class MidiFileParser():
                 df['timestep'] = df.index
                 df['piano_roll_name'] = top_level_index
                 df = df.set_index(['piano_roll_name', 'timestep'])
-                df.to_csv(f"{path_to_csv}encoded.csv", sep=';', mode='a', encoding='utf-8', header=False)
+                l.append(df)
                 if self.logging:
-                    logging.info("{}/{}: {}. ENCODED SUCCESSFULLY".format(i, len(instruments), song_name))
+                    logging.info("{}:{}/{}: {}. ENCODED SUCCESSFULLY".format(i, j,len(midi_files), song_name))
+    
+        df = pd.concat(l)
+        df.to_csv(f"{path_to_csv}encoded.csv", sep=';', encoding='utf-8', header=False)
 
                 
+
