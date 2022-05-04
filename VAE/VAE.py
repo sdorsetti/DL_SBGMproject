@@ -1,3 +1,4 @@
+#@title debugging
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,7 +8,7 @@ from torch.distributions.normal import Normal
 from torch.distributions.kl import kl_divergence
 from torch.autograd import Variable
 from torch.nn.functional import binary_cross_entropy
-
+from DL_SBGM.structure import data_path
 import matplotlib.pyplot as plt
 from IPython.display import Image, display, clear_output
 import time
@@ -26,15 +27,15 @@ class VariationalAutoencoder(nn.Module):
         
         self.teacher_forcing = teacher_forcing
         self.eps_i = eps_i
-
         self.latent_features = latent_features
-
         self.cuda = cuda 
         self.device = device 
-
+        self.enc_hidden_size = enc_hidden_size
+        self.decoders_initial_size = decoders_initial_size
         self.totalbars = totalbars
         self.notesperbar = notesperbar
         self.NUM_PITCHES = NUM_PITCHES
+        self.dropout_rate = dropout_rate
 
         #data goes into bidirectional encoder
         self.encoder = torch.nn.LSTM(
@@ -63,16 +64,15 @@ class VariationalAutoencoder(nn.Module):
         # Linear note to note type (classes/pitches)
         self.linear = nn.Linear(decoders_initial_size, NUM_PITCHES).to(device)
 
-    def init_hidden(self, batch_size, enc_hidden_size = 256,
-                    decoders_initial_size = 32):
+    def init_hidden(self, batch_size):
         #must be 2 x batch x hidden_size because its a bi-directional LSTM
-        init = torch.zeros(2, batch_size, enc_hidden_size, device=self.device)
-        c0 = torch.zeros(2, batch_size, enc_hidden_size, device=self.device)
+        init = torch.zeros(2, batch_size, self.enc_hidden_size, device=self.device)
+        c0 = torch.zeros(2, batch_size, self.enc_hidden_size, device=self.device)
     
         #2 because has 2 layers
         #n_layers_conductor
-        init_conductor = torch.zeros(1, batch_size, decoders_initial_size, device=self.device)
-        c_condunctor = torch.zeros(1, batch_size, decoders_initial_size, device=self.device)
+        init_conductor = torch.zeros(1, batch_size, self.decoders_initial_size, device=self.device)
+        c_condunctor = torch.zeros(1, batch_size, self.decoders_initial_size, device=self.device)
         
         return init,c0,init_conductor,c_condunctor
 
@@ -84,12 +84,10 @@ class VariationalAutoencoder(nn.Module):
     def set_scheduled_sampling(self, eps_i):
         self.eps_i = eps_i
 
-    def forward(self, x,totalbars,NOTESPERBAR, NUM_PITCHES , 
-                decoders_initial_size):
+    def forward(self, x,notesperbar,totalbars):
+
         batch_size = x.size(0)
-
-        note = torch.zeros(batch_size, 1 , NUM_PITCHES = self.NUM_PITCHES,device=self.device)
-
+        note = torch.zeros(batch_size, 1 , self.NUM_PITCHES,device=self.device)
         the_input = torch.cat([note,x],dim=1)
         
         outputs = {}
@@ -150,38 +148,36 @@ class VariationalAutoencoder(nn.Module):
         counter=0
         
 
-        notes = torch.zeros(batch_size,NOTESPERBAR*totalbars,NUM_PITCHES,device=self.device)
+        notes = torch.zeros(batch_size,notesperbar*totalbars,self.NUM_PITCHES,device=self.device)
 
-        # For the first timestep the note is the embedding
-        note = torch.zeros(batch_size, 1 , NUM_PITCHES,device=self.device)
+       
+        note = torch.zeros(batch_size, 1 , self.NUM_PITCHES,device=self.device)
 
         
         # Go through each element in the latent sequence
         for i in range(totalbars):
             embedding, conductor_hidden = self.conductor.to(self.device)(z[:,i,:].view(batch_size,1, -1), conductor_hidden)    
-           
+
             if self.use_teacher_forcing():
-
-                 # Reset the decoder state of each 16 bar sequence
-
-                decoder_hidden = (torch.randn(1,batch_size, decoders_initial_size,device=self.device), torch.randn(1,batch_size, decoders_initial_size,device=self.device))
-
-                embedding = embedding.expand(batch_size, NOTESPERBAR, embedding.shape[2])
-                e = torch.cat([embedding,the_input[:,range(i*totalbars,i*totalbars+totalbars),:]],dim=-1)
+                
+                decoder_hidden = (torch.randn(1,batch_size, self.decoders_initial_size,device=self.device), torch.randn(1,batch_size, self.decoders_initial_size,device=self.device))
+                embedding = embedding.expand(batch_size, notesperbar, embedding.shape[2])
+                e = torch.cat([embedding,the_input[:,range(i*notesperbar,i*notesperbar+notesperbar),:]],dim=-1)
                 
                 notes2, decoder_hidden = self.decoder(e, decoder_hidden)
                 
                 aux = self.linear(notes2)
                 aux = torch.softmax(aux, dim=2);
                     
-                notes[:,range(i*totalbars,i*totalbars+totalbars),:]=aux;
+                notes[:,range(i*notesperbar,i*notesperbar+notesperbar),:]=aux;
             else:           
                  # Reset the decoder state of each 16 bar sequence
 
-                decoder_hidden = (torch.randn(1,batch_size, decoders_initial_size,device=self.device), torch.randn(1,batch_size, decoders_initial_size,device=self.device))
+                decoder_hidden = (torch.randn(1,batch_size, self.decoders_initial_size,device=self.device), 
+                torch.randn(1,batch_size, self.decoders_initial_size,device=self.device))
 
                 
-                for _ in range(NOTESPERBAR):
+                for _ in range(notesperbar):
                     # Concat embedding with previous note
                     e = torch.cat([embedding, note], dim=-1)
                     e = e.view(batch_size, 1, -1)
@@ -251,7 +247,7 @@ class VariationalAutoencoder(nn.Module):
                 num_epochs = 100, warmup_epochs= 90, scheduled_decay_rate = 40,
                 pre_warmup_epochs = 10, use_scheduled_sampling = False):
         #optimizer = optim.Adam(net.parameters(), lr=0.001)
-        tmp_img = "tmp_vae_out.png"
+        tmp_img = data_path + "tmp_vae_out.png"
         warmup_lerp = 1/warmup_epochs
         warmup_w=0
         eps_i = 1
@@ -287,7 +283,7 @@ class VariationalAutoencoder(nn.Module):
 
                 self.set_scheduled_sampling(eps_i)
 
-                outputs = self.forward(x,totalbars = self.totalbars, NOTESPERBAR = self.notesperbar)
+                outputs = self.forward(x,notesperbar = self.notesperbar,totalbars = self.totalbars)
                 x_hat = outputs['x_hat']
                 mu, log_var = outputs['mu'], outputs['log_var']
   
@@ -300,6 +296,8 @@ class VariationalAutoencoder(nn.Module):
                 batch_loss.append(elbo.item())
                 batch_kl.append(kl.item())
                 batch_klw.append(kl_w.item())
+
+
             train_loss.append(np.mean(batch_loss))
             train_kl.append(np.mean(batch_kl))
             train_klw.append(np.mean(batch_klw))
@@ -316,8 +314,8 @@ class VariationalAutoencoder(nn.Module):
                 x = x.to(self.device)
 
                 self.set_scheduled_sampling(1.) # Please use teacher forcing for validations
-    
-                outputs = self.forward(x, totalbars = self.totalbars, NOTESPERBAR = self.notesperbar)
+
+                outputs = self.forward(x, notesperbar = self.notesperbar,totalbars = self.totalbars)
                 x_hat = outputs['x_hat']
                 mu, log_var = outputs['mu'], outputs['log_var']
                 z = outputs["z"]
@@ -382,14 +380,17 @@ class VariationalAutoencoder(nn.Module):
         print("Finished. Time elapsed: {} seconds".format(end_time))
         return train_loss, train_kl, train_klw, valid_loss, valid_kl
 
+
+
+     
     def decode_VAE(self, x, z_gen, gen_batch = 32,  
                     NUM_PITCHES = 61, totalbars = 16, 
-                    decoders_initial_size = 32, NOTESPERBAR = 16):
+                    decoders_initial_size = 32, notesperbar = 16):
         z_gen = z_gen.to(self.device)
         # Sample from latent space
         h_gen,c_gen,hconductor_gen,cconductor_gen = self.init_hidden(gen_batch)
         conductor_hidden_gen = (hconductor_gen,cconductor_gen)
-        notes_gen = torch.zeros(gen_batch,NOTESPERBAR*totalbars,NUM_PITCHES,device=self.device)
+        notes_gen = torch.zeros(gen_batch,notesperbar*totalbars,NUM_PITCHES,device=self.device)
         # For the first timestep the note is the embedding
         note_gen = torch.zeros(gen_batch, 1 , NUM_PITCHES,device=self.device)
         counter=0
@@ -397,10 +398,10 @@ class VariationalAutoencoder(nn.Module):
         for i in range(totalbars):
             decoder_hidden_gen = (torch.randn(1,gen_batch, decoders_initial_size,device=self.device), torch.randn(1,gen_batch, decoders_initial_size,device=self.device))
             embedding_gen, conductor_hidden_gen = self.conductor(z_gen[:,i,:].view(gen_batch,1, -1), conductor_hidden_gen)
-            embedding_gen = embedding_gen.expand(gen_batch, NOTESPERBAR, embedding_gen.shape[2])
-            e = torch.cat([embedding_gen,the_input[:,range(i*totalbars,i*totalbars+totalbars),:]],dim=-1)
+            embedding_gen = embedding_gen.expand(gen_batch, notesperbar, embedding_gen.shape[2])
+            e = torch.cat([embedding_gen,the_input[:,range(i*notesperbar,i*notesperbar+notesperbar),:]],dim=-1)
             notes2, decoder_hidden_gen = self.decoder(e, decoder_hidden_gen)
             aux = self.linear(notes2)
             aux = torch.softmax(aux, dim=2)
-            notes_gen[:,range(i*totalbars,i*totalbars+totalbars),:]=aux
+            notes_gen[:,range(i*notesperbar,i*notesperbar+notesperbar),:]=aux
         return(notes_gen) 
