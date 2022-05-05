@@ -35,12 +35,15 @@ class MidiDataset(Dataset):
     """Pre-processed MIDI dataset."""
 
     def __init__(self, csv_file, transform, midi_start=0, midi_end=128,group_both_hands=True):
-        """
+        """Init the mididataset object
+
         Args:
-            csv_file (string): Path to the csv file with piano rolls per song.
-            transform (callable): Transform to be applied on a sample, is expected to implement "get_sections".
-            midi_start (int): The first midi note in the dataset
-            midi_end (int): The last midi note in the dataset
+            csv_file (str): absolute path to the encoded piano_rolls csv file
+            transform (object): transform object
+            midi_start (int, optional): First pitch to be considered on a keyboard. Defaults to 0.
+            midi_end (int, optional): Last pitch to be considered on a keyboard. Defaults to 0.. Defaults to 128.
+            group_both_hands (bool, optional): Sum over same files to have an encoding of the whole music, 
+            or consider each hand part as a different music piece. Defaults to True.
         """
 
         dtypes = {}

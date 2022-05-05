@@ -22,6 +22,23 @@ class VariationalAutoencoder(nn.Module):
                     enc_hidden_size = 256,
                     decoders_initial_size = 32, dropout_rate = 0.2,
                     NUM_PITCHES = 61, totalbars=16, notesperbar=16):
+        """Init the VAE object
+
+        Args:
+            latent_features (int): dimension of the latent space
+            teacher_forcing (boolean):param 
+            eps_i (int): param
+            cuda (string): machine 
+            device (torch.device): device
+            enc_hidden_size (int, optional): . Defaults to 256.
+            decoders_initial_size (int, optional):  Defaults to 32.
+            dropout_rate (float, optional): . Defaults to 0.2.
+            NUM_PITCHES (int, optional): . Number of considered pitches.
+            Often the number of keys kept on a keyboard + one for a silence-dedicated column
+            Defaults to 61.
+            totalbars (int, optional): Number of bars considered as a sample Defaults to 16.
+            notesperbar (int, optional): Number of notes in one bar Defaults to 16.
+        """
 
         super(VariationalAutoencoder, self).__init__()
         
@@ -246,6 +263,22 @@ class VariationalAutoencoder(nn.Module):
     def train_VAE(self, optimizer, train_loader, test_loader, PATH, 
                 num_epochs = 100, warmup_epochs= 90, scheduled_decay_rate = 40,
                 pre_warmup_epochs = 10, use_scheduled_sampling = False):
+        """_summary_
+
+        Args:
+            optimizer (torch.optimizer): Adam
+            train_loader (torch.dataloader): 
+            test_loader (torch.datalaoder): 
+            PATH (str): path to save checkpoints
+            num_epochs (int, optional): number of epochs. Defaults to 100.
+            warmup_epochs (int, optional): warmup eepochs. Defaults to 90.
+            scheduled_decay_rate (int, optional): scheduled_decay_rate. Defaults to 40.
+            pre_warmup_epochs (int, optional): pre_warmup_epochs. Defaults to 10.
+            use_scheduled_sampling (bool, optional): use_scheduled_sampling. Defaults to False.
+
+        Returns:
+            tupple: losses
+        """
         #optimizer = optim.Adam(net.parameters(), lr=0.001)
         tmp_img = data_path + "tmp_vae_out.png"
         warmup_lerp = 1/warmup_epochs
@@ -386,6 +419,17 @@ class VariationalAutoencoder(nn.Module):
     def decode_VAE(self, x, z_gen, gen_batch = 32,  
                     NUM_PITCHES = 61, totalbars = 16, 
                     decoders_initial_size = 32, notesperbar = 16):
+        """Decode the data map in latent space
+
+        Args:
+            x (np.array): 
+            z_gen (np.array): 
+            gen_batch (int, optional): . Defaults to 32.
+            NUM_PITCHES (int, optional): . Defaults to 61.
+            totalbars (int, optional): . Defaults to 16.
+            decoders_initial_size (int, optional): . Defaults to 32.
+            notesperbar (int, optional): . Defaults to 16.
+        """
         z_gen = z_gen.to(self.device)
         # Sample from latent space
         h_gen,c_gen,hconductor_gen,cconductor_gen = self.init_hidden(gen_batch)

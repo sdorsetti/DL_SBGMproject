@@ -12,7 +12,7 @@ It contains the following folders:
 
 A notebook : final_dorsetti_berloty.ipynb : explains and shows the main outputs that this repository give, when using SBGM.
 
-A pdf : final_dorsetti_berloty.pdf : The report of our project, with litterature review and further explications of the SBGM, the VAEs and the implementation of them.
+A pdf : DL_SBGM_BERLOTTY_DORSETTI.pdf : The report of our project, with litterature review and further explications of the SBGM, the VAEs and the implementation of them.
 
 Finally, a structure.py file contains the main path to the data, if one wants to use heavier data in a cloud environnement such a google drive. Just clone the repository and change the path. The repository is "colab-friendly" and can be ran easaly on any google collab. 
 
